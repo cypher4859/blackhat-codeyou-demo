@@ -1,0 +1,36 @@
+﻿@foreach (var pizza in Order.Pizzas)
+{
+
+	<div class="review-order-text">
+		<p>
+
+			@(pizza.Size)"
+			@pizza.Special?.Name
+			($@pizza.GetFormattedTotalPrice())
+
+		</p>
+
+		<ul>
+			@foreach (var topping in pizza.Toppings)
+			{
+				<li>+ @topping.Topping?.Name</li>
+			}
+		</ul>
+
+	</div>
+
+	<br />
+}
+<div class="review-order-text-price">
+	<p>
+
+		Total Price:
+		<br />
+		$@Order.GetFormattedTotalPrice()
+
+	</p>
+</div>
+
+@code {
+	[Parameter, EditorRequired] public Order Order { get; set; } = new();
+}

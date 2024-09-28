@@ -1,0 +1,105 @@
+version: "3.4"
+services:
+  cowabungapizza:
+    restart: always
+    build:
+      context: ./FrontendApp
+    ports:
+      - 8080:8080
+    depends_on:
+      cowabunga-db:
+        condition: service_healthy
+        restart: true
+
+  cowabunga-db:
+    build:
+      context: ./FrontendDatabase
+      dockerfile: Dockerfile
+    # restart: always
+    container_name: cowabunga-db
+    ports:
+      - 4444:22
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=cowabunga
+      - MYSQL_ROOT_PASSWORD=mysqluser123
+      - MYSQL_USER=raphael
+      - MYSQL_PASSWORD=raphael123
+    volumes:
+      - ./FrontendDatabase/mysql:/var/lib/mysql
+    healthcheck:
+          test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+          timeout: 20s
+          retries: 10
+  
+  cowabunga-db-initialize:
+    build:
+      context: ./FrontendDatabase
+      dockerfile: Dockerfile
+    restart: no
+    depends_on:
+      cowabunga-db:
+        condition: service_healthy
+    entrypoint: [
+      "bash", "-c", 
+      "
+        mysql -u root --password=mysqluser123 -h cowabunga-db < initialize_database.sql 
+      ",
+    ]
+
+  # In a private subnet
+  super-secret-database:
+    image: bitnami/postgresql:latest
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - MOCKAROO_API_KEY
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    volumes:
+      - ./SecretDatabase/postgresql:/bitnami/postgresql
+      - ./SecretDatabase/sample-data/blackhat_demo.sql:/docker-entrypoint-initdb.d/blackhat_demo.sql
+
+  # TODO: Setup FTP host
+  ftpd_server:
+    build:
+      context: ./FTPhost
+    container_name: pure-ftpd
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+      - "61000:61000"
+    volumes:
+      - "./FTPhost/pureftpd/data:/home/admin/"
+      - "./FTPhost/pureftpd/passwd:/etc/pure-ftpd/passwd"
+    environment:
+      FTP_USER_NAME: admin
+      FTP_USER_PASS: adkljeiasdkl8973
+      FTP_USER_HOME: /home/admin
+    restart: always
+
+  jupyter:
+    build:
+      context: ./Jupyter
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - "./Jupyter/bin/:/source/bin"
+
+  smtpd:
+    image: vulhub/opensmtpd:6.6.1p1
+    ports:
+      - "8825:25"
+
+  jump-host:
+    build:
+      context: ./JumpHost
+    ports:
+      - 22:22
+    command: ["sleep", "3000"]
+          
+networks:
+  default:
+    driver: bridge

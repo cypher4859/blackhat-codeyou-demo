@@ -1,0 +1,12 @@
+version: "3.4"
+services:
+  cowabungapizza:
+    # image: cowabunga-pizza:latest
+    build:
+      context: .
+    ports:
+      - 8080:8080
+    
+networks:
+  default:
+    driver: bridge
