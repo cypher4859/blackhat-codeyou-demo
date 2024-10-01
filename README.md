@@ -84,3 +84,27 @@ alice:alice
     - PostgreSQL
     - Should be a credential file or something similar in `/root`
     - Then we use those credentials to dump the database
+
+### Kali
+- Once login then we need to do a:
+```sh
+# login as kali
+sudo apt update
+sudo apt full-upgrade -y
+echo "[i] Installing Xfce4 & xrdp (this will take a while as well)"
+sudo apt-get install -y kali-desktop-xfce xorg xrdp
+
+echo "[i] Configuring xrdp to listen to port 3390 (but not starting the service)"
+sudo sed -i 's/port=3389/port=3390/g' /etc/xrdp/xrdp.ini
+
+wget https://gitlab.com/kalilinux/recipes/kali-scripts/-/raw/main/xfce4.sh
+chmod +x xfce4.sh
+sudo ./xfce4.sh
+
+# In the case of AWS
+echo kali:kali | sudo chpasswd
+```
+
+### Terraform
+- Build time: ~4m
+- Destroy time: ~17m - 20m
