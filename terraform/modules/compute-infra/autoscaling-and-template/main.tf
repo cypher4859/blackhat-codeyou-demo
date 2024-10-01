@@ -1,10 +1,10 @@
 resource "aws_launch_template" "ecs_lt" {
-    name_prefix   = "ecs-template"
-    image_id      = "ami-062c116e449466e7f"
-    instance_type = "t3.micro"
+    name_prefix   = "ecs-blackhat-template"
+    image_id      = "ami-0fc9e89bb58985752" # Amazon ECS-Optimized Amazon Linux 2 (AL2) x86_64 AMI AMI, pulled from AWS -> EC2 -> AMI Catalog
+    instance_type = "t3.medium"
 
-    key_name               = "ec2ecsglog"
-    vpc_security_group_ids = [aws_security_group.security_group.id]
+    key_name               = var.launch_template_key_name
+    vpc_security_group_ids = var.security_groups
     iam_instance_profile {
         name = "ecsInstanceRole"
     }
@@ -24,11 +24,11 @@ resource "aws_launch_template" "ecs_lt" {
         }
     }
 
-    user_data = filebase64("${path.module}/ecs.sh")
+    user_data = filebase64("${path.module}/assets/ecs.sh")
 }
 
 resource "aws_autoscaling_group" "ecs_asg" {
-    vpc_zone_identifier = [aws_subnet.subnet.id, aws_subnet.subnet2.id]
+    vpc_zone_identifier = var.subnets
     desired_capacity    = 2
     max_size            = 3
     min_size            = 1
