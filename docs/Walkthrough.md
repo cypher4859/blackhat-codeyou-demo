@@ -2,19 +2,19 @@
 
 ## All users
 ### Dotnet
-raphael:raphael123
-james:james1234567890
-melissa:sdjfljkasdfj
+raphael:raphael123  
+james:james1234567890  
+melissa:sdjfljkasdfj  
 
 ### FTP
-admin:adkljeiasdkl8973
-jimmy:jimmy123
-john:asjkweioajsd123
-hannah:pwoejklsadknihai32
-blake:erjadsjiej
-tim:starwarsday
-melissa:sdjfljkasdfj
-alice:alice
+admin:adkljeiasdkl8973  
+jimmy:jimmy123  
+john:asjkweioajsd123  
+hannah:pwoejklsadknihai32  
+blake:erjadsjiej  
+tim:starwarsday  
+melissa:sdjfljkasdfj  
+alice:alice  
 
 # Attacking the Machines
 ## Public Network
