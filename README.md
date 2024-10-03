@@ -1,93 +1,75 @@
 # BlackHat Hacking: A Demo
+## Docs - Table of Contents
+0. [Getting Started](./docs/GettingStarted.md)
+0. [Architecture](./docs/Architecture.md)
+0. [Walkthrough](./docs/Walkthrough.md)
+0. [Network Infra](#network-infrastructure)
+0. [Compute Infra](#compute-infrastructure)
+0. [Deployment](#deployment)
+0. [FAQ](#faq)
 
-## Possible Targets
-### All users
-#### Dotnet
-raphael:raphael123
-james:james1234567890
-melissa:sdjfljkasdfj
 
-#### FTP
-admin:adkljeiasdkl8973
-jimmy:jimmy123
-john:asjkweioajsd123
-hannah:pwoejklsadknihai32
-blake:erjadsjiej
-tim:starwarsday
-melissa:sdjfljkasdfj
-alice:alice
+Pulled from [Architecture Documentation](./docs/Architecture.md)
 
-#### Public Network
-- WebApp
-    - ~~TODO~~: Setup CowabungaPizza
-    - ~~TODO~~: pivot - Find the credentials for raphael, which should let you into the database
-    - ~~TODO~~: Need to setup SSH
-    - ~~TODO~~: Use `wget` gtfobin
-    - Get root
-        - setup id_rsa?
+## Network Infrastructure
+This system is meant to be deployed to AWS to a particular region. I used `us-east-2`. The public Security Group protects the Public Subnet. All HTTP requests from the various machines are transmitted through the VPC Internet Gateway at the boundary edge. The only open receiving entrance to the internet is on port 8080 through the Application Load Balancer which will direct those transmissions to the CowabungaPizza frontend dotnet app.
 
-- WebApp Database [DONE]
-    - Get in from Cowabunga-App
-    - ~~TODO~~: Phase1 - Get access
-        - Setup local users, 
-            - one will be the entrypoint, can use this user to dump the `users` table in cowabunga database
-            - one of them will be superadmin, can use this user to ssh into the host, SUID up
-        - Expected to login via ssh or mysql from cowabunga app
-        - SSH for james and raphael is working. Can pivot from user to admin inside sql.
-    - ~~TODO~~: Phase2 - ~~mysql SUID~~ Won't work.
-        - Need to find something else.
-        - Added SUID cpulimit
-        - /usr/bin/cpulimit -l 100 -- /bin/sh -p
-    - Get root
-        - TODO: Make sure as root that we can dump the whole database and setup persistence
+Additionally there is a private subnet meant to contain the secret database and a VM that can be used a jumphost but that's still in the works.
 
-- FTP FileServer
-    - ~~TODO~~: Build it
-        - ~~Got the pure-ftpd working~~
-        - ~~Next is to add the users~~ # This needs to be done manually once, then it's persistent (volume)
-        - ~~then build their files~~
-        - ~~Add the files~~
-        - ~~test it~~
-        - ~~Add SSH~~
-        - ~~Set SSH running on port 61000~~
-        - ~~Test that we can login to all the ftp users~~ *-ish
-    - ~~TODO~~ -> Phase 2: This should lead to logging in as a regular user
-        - ~~SSH running on port 61000~~
-        - ~~have an id_rsa sitting in root directory~~
-    - ~~TODO~~ -> Phase 3: Need to do post-exploit to get root
-        - ~~SUID use zip to download the root id_rsa key~~
-        - ~~Can login with the ssh key afterwards~~
- 
- - Jupyter
-    - ~~TODO~~: test RCE via system shell
-    - ~~TODO~~: SUID
-        - Using `mawk` - Can do reads
-        - Using `find` - Can get terminal
-    - ~~TODO~~: Add loot
-        - Add melissa:sdjfljkasdfj to jupyter with homedir
-        - Make an dotnet env file
-        - Make sure we can login from jupyter to CowabungaPizza
+## Compute Infrastructure
+All of the Compute Infrastructure involves docker containers running services on EC2 infrastructure. Had to use `t3.medium`s to be able to host 2 containers each. All containers + virtual-machines are stood up using AutoScaling group that references a launch template for EC2 provisioning and Task Definitions for container provisioning. All of this is managed by Amazon ECS which manages the up/down scaling of resources, the specs of each, volumes, ebs storage, etc.
 
-- SMTPD
-    - TODO: [Docs on exploiting](https://github.com/vulhub/vulhub/tree/master/opensmtpd/CVE-2020-7247)
-        - Show Exploit-db
-        - curl download file
-        - show downloading dependencies?
-        - python
-    - Have root
+The Kali host and the VulnHub instance in the private subnet are not managed by AutoScaling group and are stood up by itself
 
---- 
-#### Private Network
-- Backend app
-    - Idk
+## Deployment
+### Pre-Requisites
+1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-install.html)
+1. Use AWS CLI to create the Credentials file and config file. You should have both at `~/.aws/config` and `~/.aws/credentials`. You can find [details on how to set these up here](https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html). An example of what this looks like for [is below](#example-of-credentials-and-config-file).
+1. Install `terraform` using [their website](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+2. `cd terraform`
+2. In the `terraform/main.tf` file there is a `backend "s3" { ... }` resource. You can either delete this block or change the `bucket` value to the name of an S3 bucket that you own (you'll also need to make sure you have the right region as well). This backend block just determines where your terraform state file will be put, not necessary for one-off deployments.
 
-- Super Secret Database Server
-    - PostgreSQL
-    - Should be a credential file or something similar in `/root`
-    - Then we use those credentials to dump the database
+### Actually Deploying
+1. `terraform apply` and be sure to type `yes` when prompted if you actually want to apply changes. Any other answer will stop the process
+2. Go get a coffee :) Build time is around ~8minutes, should never be more than 30minutes or something is wrong :shrug:
 
-### Kali
-- Once login then we need to do a:
+
+### Destroying
+1. When you're tired of this then from the `terraform/` directory run `terraform destroy`. This will prompt yo, say `yes`. 
+2. *__Troubleshooting__*: There's a chance it'll fail to destroy some resources because of chicken-n-egg problems so if it fails then you can go to the AWS Console on their website and manually delete that failed resource. Sometimes terraform fights with the AutoScaling Group (ASG) and the ECS Capacity Provider; In that case I deleted the ASG and then deleted the ECS Capacity Provider and then ran the `terraform destroy` again to make sure it was cleaned up.
+
+### Connecting to the Kali instance
+You can go to your instance in the AWS Console, click on the instance, click `Connect` and it'll give you some options. Generally you'll need to grab the SSH KeyPair that is used with the Kali instance, download it from the `Key pairs` tab in the `EC2` Service. *_Make sure to login with user `kali` and not root_*
+```sh
+ssh -i "blackhat_codeyou_demo_keypair.pem" kali@<Public IPv4 DNS>
+```
+
+[Architecture Diagram](./assets/BlackHat_AWS-Architecture.png)
+
+
+### FAQ
+#### Example of credentials and config file
+```
+# Credentials file
+[blackhat-user]
+aws_access_key_id = <YOUR ACCESS KEY>
+aws_secret_access_key = <YOUR SECRET KEY>
+
+# Config file
+[profile blackhat-user]
+region=us-east-2
+output = json
+```
+
+#### How Do I Setup VulnHub hosts?
+Source: https://docs.aws.amazon.com/vm-import/latest/userguide/import-vm-image.html
+1. Go download the vulhub OVA file from vulhub
+2. Upload to S3 bucket in the account
+3. Make a containers.json (should be one in the `VulHub/` path of this repo)
+4. `aws ec2 import-image --description "<some kind of description>" --disk-containers "file://<PathToVulnHubDirectory>/containers.json"`
+
+#### Once Kali is setup what do I do?
+- Once logged in then we need to do a:
 ```sh
 # login as kali
 sudo apt update
@@ -105,14 +87,3 @@ sudo ./xfce4.sh
 # In the case of AWS
 echo kali:kali | sudo chpasswd
 ```
-
-### Terraform
-- Build time: ~4m
-- Destroy time: ~17m - 20m
-
-### Setting up the VulnHub Instances
-Source: https://docs.aws.amazon.com/vm-import/latest/userguide/import-vm-image.html
-1. Go download the vulhub OVA file from vulhub
-2. Upload to S3 bucket in the account
-3. Make a containers.json (should be one in the `VulHub/` path)
-4. `aws ec2 import-image --description "My server disks" --disk-containers "file://C:\import\containers.json"`

@@ -58,3 +58,23 @@ Source: https://docs.aws.amazon.com/vm-import/latest/userguide/import-vm-image.h
 2. Upload to S3 bucket in the account
 3. Make a containers.json (should be one in the `VulHub/` path of this repo)
 4. `aws ec2 import-image --description "<some kind of description>" --disk-containers "file://<PathToVulnHubDirectory>/containers.json"`
+
+#### Once Kali is setup what do I do?
+- Once logged in then we need to do a:
+```sh
+# login as kali
+sudo apt update
+sudo apt full-upgrade -y
+echo "[i] Installing Xfce4 & xrdp (this will take a while as well)"
+sudo apt-get install -y kali-desktop-xfce xorg xrdp
+
+echo "[i] Configuring xrdp to listen to port 3390 (but not starting the service)"
+sudo sed -i 's/port=3389/port=3390/g' /etc/xrdp/xrdp.ini
+
+wget https://gitlab.com/kalilinux/recipes/kali-scripts/-/raw/main/xfce4.sh
+chmod +x xfce4.sh
+sudo ./xfce4.sh
+
+# In the case of AWS
+echo kali:kali | sudo chpasswd
+```
