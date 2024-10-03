@@ -35,7 +35,7 @@ You can go to your instance in the AWS Console, click on the instance, click `Co
 ssh -i "blackhat_codeyou_demo_keypair.pem" kali@<Public IPv4 DNS>
 ```
 
-[Architecture Diagram](./assets/BlackHat_AWS-Architecture.png)
+![Architecture Diagram](./assets/BlackHat_AWS-Architecture.png)
 
 
 ### FAQ
