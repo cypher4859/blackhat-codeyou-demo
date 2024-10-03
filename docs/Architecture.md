@@ -21,7 +21,7 @@ The Kali host and the VulnHub instance in the private subnet are not managed by 
 2. In the `terraform/main.tf` file there is a `backend "s3" { ... }` resource. You can either delete this block or change the `bucket` value to the name of an S3 bucket that you own (you'll also need to make sure you have the right region as well). This backend block just determines where your terraform state file will be put, not necessary for one-off deployments.
 
 ### Actually Deploying
-1. `terraform apply` and be sure to type `yes` when prompted if you actually want to apply changes. Any other answer will stop the process
+1. From the `terraform/` directory you can run `terraform apply` and be sure to type `yes` when prompted if you actually want to apply changes. Any other answer will stop the process
 2. Go get a coffee :) Build time is around ~8minutes, should never be more than 30minutes or something is wrong :shrug:
 
 
