@@ -1,0 +1,7 @@
+[
+    {
+      "Description": "VulHub - PleaseHackMe",
+      "Format": "ova",
+      "Url" : "s3://blackhat-codeyou-demo-terraform-bucket/AMIs/vulnhub/Ubuntu_CTF.ova"
+    }
+]
