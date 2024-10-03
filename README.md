@@ -1,6 +1,5 @@
 # BlackHat Hacking: A Demo
 ## Docs - Table of Contents
-0. [Getting Started](./docs/GettingStarted.md)
 0. [Architecture](./docs/Architecture.md)
 0. [Walkthrough](./docs/Walkthrough.md)
 0. [Network Infra](#network-infrastructure)
