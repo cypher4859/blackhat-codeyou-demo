@@ -9,7 +9,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 }
 
 resource "aws_ecs_capacity_provider" "ecs_capacity_provider" {
-    name = "test1"
+    name = "ec2_capacity_provider"
 
     auto_scaling_group_provider {
         auto_scaling_group_arn = var.asg_arn
@@ -35,11 +35,11 @@ resource "aws_ecs_cluster_capacity_providers" "example" {
     }
 }
 
-resource "aws_ecs_task_definition" "public_ecs_task_definition" {
-    family             = "public-subnet-ecs-task" # TODO: Swap this
+resource "aws_ecs_task_definition" "cowabunga_ecs_task_definition" {
+    family             = "cowabunga-ecs-task" # TODO: Swap this
     network_mode       = "awsvpc"
     execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
-    cpu                = 1536
+    cpu                = 256
     runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"
@@ -58,13 +58,20 @@ resource "aws_ecs_task_definition" "public_ecs_task_definition" {
                     protocol      = "tcp"
                 }
             ]
-            dependsOn = [
-                {
-                    containerName   = "cowabunga-db-initialize",
-                    condition       = "COMPLETE"
-                }
-            ]
         },
+    ])
+}
+
+resource "aws_ecs_task_definition" "cowabunga_db_ecs_task_definition" {
+    family             = "cowabunga-db-ecs-task" # TODO: Swap this
+    network_mode       = "awsvpc"
+    execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
+    cpu                = 512
+    runtime_platform {
+        operating_system_family = "LINUX"
+        cpu_architecture        = "X86_64"
+    }
+    container_definitions = jsonencode([
         {
             name      = "cowabunga-db"
             image     = "docker.io/cypher4859/cowabunga-db:latest" # TODO: Swap this for the actual 
@@ -105,7 +112,20 @@ resource "aws_ecs_task_definition" "public_ecs_task_definition" {
                     condition       = "START"
                 }
             ]
-        },
+        }
+    ])
+}
+
+resource "aws_ecs_task_definition" "jupyter_mail_ftpd_ecs_task_definition" {
+    family             = "jupyter-ecs-task" # TODO: Swap this
+    network_mode       = "awsvpc"
+    execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
+    cpu                = 256
+    runtime_platform {
+        operating_system_family = "LINUX"
+        cpu_architecture        = "X86_64"
+    }
+    container_definitions = jsonencode([
         {
             name      = "jupyter"
             image     = "docker.io/cypher4859/vuln_jupyter:latest" # TODO: Swap this for the actual 
@@ -120,6 +140,18 @@ resource "aws_ecs_task_definition" "public_ecs_task_definition" {
                 }
             ]
         },
+    ])
+}
+resource "aws_ecs_task_definition" "smtpd_ecs_task_definition" {
+    family             = "smtpd-ecs-task" # TODO: Swap this
+    network_mode       = "awsvpc"
+    execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
+    cpu                = 256
+    runtime_platform {
+        operating_system_family = "LINUX"
+        cpu_architecture        = "X86_64"
+    }
+    container_definitions = jsonencode([
         {
             name      = "smtpd"
             image     = "vulhub/opensmtpd:6.6.1p1" # TODO: Swap this for the actual 
@@ -134,6 +166,19 @@ resource "aws_ecs_task_definition" "public_ecs_task_definition" {
                 }
             ]
         },
+    ])
+}
+
+resource "aws_ecs_task_definition" "ftpd_ecs_task_definition" {
+    family             = "ftpd-ecs-task" # TODO: Swap this
+    network_mode       = "awsvpc"
+    execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
+    cpu                = 256
+    runtime_platform {
+        operating_system_family = "LINUX"
+        cpu_architecture        = "X86_64"
+    }
+    container_definitions = jsonencode([
         {
             name      = "ftpd_server"
             image     = "docker.io/cypher4859/vuln_ftpd_server:latest" # TODO: Swap this for the actual 
@@ -166,11 +211,11 @@ resource "aws_ecs_task_definition" "public_ecs_task_definition" {
     ])
 }
 
-resource "aws_ecs_task_definition" "private_ecs_task_definition" {
-    family             = "private-subnet-ecs-task" # TODO: Swap this
+resource "aws_ecs_task_definition" "secret_postgresql_ecs_task_definition" {
+    family             = "secret-postgresql-ecs-task" # TODO: Swap this
     network_mode       = "awsvpc"
     execution_role_arn = "arn:aws:iam::${local.acct_id}:role/ecsTaskExecutionRole"
-    cpu                = 512
+    cpu                = 256
     runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"
@@ -197,11 +242,12 @@ resource "aws_ecs_task_definition" "private_ecs_task_definition" {
     ])
 }
 
-resource "aws_ecs_service" "ecs_service" {
-    name            = "blackhat-demo"
+resource "aws_ecs_service" "cowabunga_ecs_service" {
+    name            = "blackhat-cowabunga-service"
     cluster         = aws_ecs_cluster.ecs_cluster.id
-    task_definition = aws_ecs_task_definition.public_ecs_task_definition.arn
+    task_definition = aws_ecs_task_definition.cowabunga_ecs_task_definition.arn
     desired_count   = 1
+    depends_on = [ aws_ecs_service.public_subnet_ecs_service ]
 
     network_configuration {
         subnets         = var.subnets
@@ -226,5 +272,66 @@ resource "aws_ecs_service" "ecs_service" {
         target_group_arn = var.alb_target_group_arn
         container_name   = "cowabunga"
         container_port   = 8080
+    }
+}
+
+resource "aws_ecs_service" "public_subnet_ecs_service" {
+    for_each = tomap({
+        "cowabunga-db"  = aws_ecs_task_definition.cowabunga_db_ecs_task_definition.arn
+        "jupyter"       = aws_ecs_task_definition.jupyter_mail_ftpd_ecs_task_definition.arn
+        "smtpd"         = aws_ecs_task_definition.smtpd_ecs_task_definition.arn
+        "ftpd"          = aws_ecs_task_definition.ftpd_ecs_task_definition.arn
+    })
+    name            = "blackhat-${each.key}-service"
+    cluster         = aws_ecs_cluster.ecs_cluster.id
+    task_definition = each.value
+    desired_count   = 1
+
+    network_configuration {
+        subnets         = var.subnets
+        security_groups = var.security_groups
+    }
+
+    force_new_deployment = true
+    placement_constraints {
+        type = "distinctInstance"
+    }
+
+    triggers = {
+        redeployment = plantimestamp()
+    }
+
+    capacity_provider_strategy {
+        capacity_provider = aws_ecs_capacity_provider.ecs_capacity_provider.name
+        weight            = 100
+    }
+}
+
+resource "aws_ecs_service" "private-subnet-service" {
+    for_each = tomap({
+        "postgresl"   = aws_ecs_task_definition.secret_postgresql_ecs_task_definition.arn
+    })
+    name            = "blackhat-${each.key}-service"
+    cluster         = aws_ecs_cluster.ecs_cluster.id
+    task_definition = each.value
+    desired_count   = 1
+
+    network_configuration {
+        subnets         = var.subnets
+        security_groups = var.security_groups
+    }
+
+    force_new_deployment = true
+    placement_constraints {
+        type = "distinctInstance"
+    }
+
+    triggers = {
+        redeployment = plantimestamp()
+    }
+
+    capacity_provider_strategy {
+        capacity_provider = aws_ecs_capacity_provider.ecs_capacity_provider.name
+        weight            = 100
     }
 }
