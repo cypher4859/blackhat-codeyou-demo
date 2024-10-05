@@ -45,20 +45,6 @@ resource "aws_ecs_task_definition" "cowabunga_ecs_task_definition" {
         cpu_architecture        = "X86_64"
     }
     container_definitions = jsonencode([
-        {
-            name      = "cowabunga"
-            image     = "docker.io/cypher4859/cowabunga-pizza:latest" # TODO: Swap this for the actual 
-            cpu       = 256
-            memory    = 1024
-            essential = true
-            portMappings = [
-                {
-                    containerPort = 8080
-                    hostPort      = 8080
-                    protocol      = "tcp"
-                }
-            ]
-        },
     ])
 }
 
@@ -72,6 +58,31 @@ resource "aws_ecs_task_definition" "cowabunga_db_ecs_task_definition" {
         cpu_architecture        = "X86_64"
     }
     container_definitions = jsonencode([
+        {
+            name      = "cowabunga"
+            image     = "docker.io/cypher4859/cowabunga-pizza:latest" # TODO: Swap this for the actual 
+            cpu       = 256
+            memory    = 1024
+            essential = true
+            portMappings = [
+                {
+                    containerPort = 8080
+                    hostPort      = 8080
+                    protocol      = "tcp"
+                },
+                {
+                    containerPort = 22
+                    hostPort      = 4444
+                    protocol      = "tcp"
+                }
+            ],
+            dependsOn = [
+                {
+                    containerName   = "cowabunga-db",
+                    condition       = "START"
+                }
+            ]
+        },
         {
             name      = "cowabunga-db"
             image     = "docker.io/cypher4859/cowabunga-db:latest" # TODO: Swap this for the actual 
@@ -247,7 +258,7 @@ resource "aws_ecs_service" "cowabunga_ecs_service" {
     cluster         = aws_ecs_cluster.ecs_cluster.id
     task_definition = aws_ecs_task_definition.cowabunga_ecs_task_definition.arn
     desired_count   = 1
-    depends_on = [ aws_ecs_service.public_subnet_ecs_service ]
+    # depends_on = [ aws_ecs_service.public_subnet_ecs_service["cowabunga-db"] ]
 
     network_configuration {
         subnets         = var.subnets
