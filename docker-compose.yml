@@ -6,6 +6,7 @@ services:
       context: ./FrontendApp
     ports:
       - 8080:8080
+      - 4445:22
     depends_on:
       cowabunga-db:
         condition: service_healthy
