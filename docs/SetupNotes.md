@@ -1,5 +1,15 @@
 # BlackHat Hacking: A Demo
 
+
+## Things to do on Setup Day
+1. Make sure every host is deployed via `terraform apply`
+    - If it needs re-deployed, allocate at least 30minutes to do it
+2. Make sure you can SSH into Kali
+3. Make sure you can RDP into Kali
+4. Ensure that Kali is updated with all the necessary packages, preferably with a GUI Desktop
+5. Ensure that you can login via SSH to other hosts
+6. If needed we can quickly spin up a new instance of kali using the backup image
+
 ## Possible Targets
 ### All users
 #### Dotnet
@@ -17,7 +27,8 @@ tim:starwarsday
 melissa:sdjfljkasdfj
 alice:alice
 
-#### Public Network
+## Setup
+### Public Network
 - WebApp
     - ~~TODO~~: Setup CowabungaPizza
     - ~~TODO~~: pivot - Find the credentials for raphael, which should let you into the database
@@ -77,7 +88,7 @@ alice:alice
     - Have root
 
 --- 
-#### Private Network
+### Private Network
 - Backend app
     - Idk
 
@@ -90,8 +101,10 @@ alice:alice
 - Once login then we need to do a:
 ```sh
 # login as kali
-sudo apt update
-sudo apt full-upgrade -y
+sudo -i
+apt upd ate && apt full-upgrade -y && apt install -y kali-linux-default
+
+
 echo "[i] Installing Xfce4 & xrdp (this will take a while as well)"
 sudo apt-get install -y kali-desktop-xfce xorg xrdp
 
@@ -101,6 +114,7 @@ sudo sed -i 's/port=3389/port=3390/g' /etc/xrdp/xrdp.ini
 wget https://gitlab.com/kalilinux/recipes/kali-scripts/-/raw/main/xfce4.sh
 chmod +x xfce4.sh
 sudo ./xfce4.sh
+systemctl enable xrdp --now
 
 # In the case of AWS
 echo kali:kali | sudo chpasswd
