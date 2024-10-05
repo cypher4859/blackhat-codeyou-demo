@@ -29,16 +29,22 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
 
+
 resource "aws_instance" "kali" {
-    ami           = "ami-0327cf1c5e479e093"
-    instance_type = "t2.medium"
-    key_name = var.key_name
-    subnet_id = var.public_subnet_id
-    security_groups = [ aws_security_group.kali.id ]
+  ami           = "ami-0327cf1c5e479e093"
+  instance_type = "t3.medium"
+  key_name = var.key_name
+  subnet_id = var.public_subnet_id
+  security_groups = [ aws_security_group.kali.id ]
 
-    tags = {
-        Name = "Kali"
-    }
+  tags = {
+      Name = "Kali"
+  }
 
-    # user_data = file("${path.module}/assets/setup_kali.sh")
+  root_block_device {
+    volume_size = 40 # in GB <<----- I increased this!
+    volume_type = "standard"
+    encrypted   = false
+    # kms_key_id  = data.aws_kms_key.customer_master_key.arn
+  }
 }
